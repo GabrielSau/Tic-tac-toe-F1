@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Grid Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .f1-grid-cell { aspect-ratio: 1 / 1; }
+        .bg-f1-red { background-color: #e10600; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-10">
+
+    <h1 class="text-4xl font-black mb-8 italic tracking-tighter">F1 <span class="text-red-600">GRID</span> GAME</h1>
+
+    <div id="game-container" class="w-full max-w-2xl px-4">
+        <div class="grid grid-cols-4 gap-2 mb-2">
+            <div></div> <div id="col-0" class="flex flex-col items-center justify-center p-2 bg-gray-800 rounded text-center text-sm font-bold"></div>
+            <div id="col-1" class="flex flex-col items-center justify-center p-2 bg-gray-800 rounded text-center text-sm font-bold"></div>
+            <div id="col-2" class="flex flex-col items-center justify-center p-2 bg-gray-800 rounded text-center text-sm font-bold"></div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+            <div id="row-0" class="flex items-center justify-center bg-gray-800 rounded p-2 text-sm font-bold text-center"></div>
+            <button onclick="openModal(0,0)" id="cell-0-0" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(0,1)" id="cell-0-1" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(0,2)" id="cell-0-2" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+
+            <div id="row-1" class="flex items-center justify-center bg-gray-800 rounded p-2 text-sm font-bold text-center"></div>
+            <button onclick="openModal(1,0)" id="cell-1-0" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(1,1)" id="cell-1-1" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(1,2)" id="cell-1-2" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+
+            <div id="row-2" class="flex items-center justify-center bg-gray-800 rounded p-2 text-sm font-bold text-center"></div>
+            <button onclick="openModal(2,0)" id="cell-2-0" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(2,1)" id="cell-2-1" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+            <button onclick="openModal(2,2)" id="cell-2-2" class="f1-grid-cell bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center justify-center text-xs font-bold p-1"></button>
+        </div>
+    </div>
+
+    <div id="search-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4">
+        <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md border border-gray-600">
+            <h2 class="text-xl font-bold mb-4">Proposer un pilote</h2>
+            <input type="text" id="driver-search" oninput="searchDriver(this.value)" placeholder="Tapez le nom d'un pilote..." class="w-full p-3 rounded bg-gray-700 border border-gray-500 focus:outline-none focus:border-red-500 mb-4">
+            <div id="search-results" class="max-height-60 overflow-y-auto space-y-2"></div>
+            <button onclick="closeModal()" class="mt-4 text-gray-400 hover:text-white underline w-full text-center">Annuler</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = null;
+        let currentCell = { r: 0, c: 0 };
+        // place X or O helmet depending on current player
+        let currentPlayer = 'X';
+
+        async function initGame() {
+            const res = await fetch('http://127.0.0.1:8000/new-game');
+            gameState = await res.json();
+            renderHeaders();
+            // start with X when a game begins
+            currentPlayer = 'X';
+        }
+
+        function sanitizeCircuitName(name) {
+            // convert circuit name into matching file base (lowercase, underscores, strip non-alphanumeric)
+            return name.toLowerCase()
+                       .replace(/\s+/g, '_')
+                       .replace(/[^a-z0-9_]/g, '');
+        }
+
+        function renderHeaders() {
+            // Remplir les labels des colonnes et lignes ; pour une catégorie "win" on affiche aussi la trace du circuit
+            for(let i=0; i<3; i++) {
+                const col = gameState.cols[i];
+                const colEl = document.getElementById(`col-${i}`);
+                colEl.innerHTML = '';
+                if(col.type === 'win' && col.value) {
+                    const img = document.createElement('img');
+                    img.src = `img/circuits/${sanitizeCircuitName(col.value)}.png`;
+                    img.alt = col.value;
+                    img.className = 'h-12 object-contain mb-1';
+                    colEl.appendChild(img);
+                }
+                colEl.appendChild(document.createTextNode(col.label));
+
+                const row = gameState.rows[i];
+                const rowEl = document.getElementById(`row-${i}`);
+                rowEl.innerHTML = '';
+                if(row.type === 'win' && row.value) {
+                    const img = document.createElement('img');
+                    img.src = `img/circuits/${sanitizeCircuitName(row.value)}.png`;
+                    img.alt = row.value;
+                    img.className = 'h-12 object-contain mb-1';
+                    rowEl.appendChild(img);
+                }
+                rowEl.appendChild(document.createTextNode(row.label));
+            }
+        }
+
+        function openModal(r, c) {
+            currentCell = { r, c };
+            document.getElementById('search-modal').classList.remove('hidden');
+            document.getElementById('driver-search').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('search-modal').classList.add('hidden');
+            document.getElementById('driver-search').value = '';
+            document.getElementById('search-results').innerHTML = '';
+        }
+
+        async function searchDriver(q) {
+            if(q.length < 2) return;
+            const res = await fetch(`http://127.0.0.1:8000/search-driver?q=${q}`);
+            const drivers = await res.json();
+            
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = drivers.map(d => `
+                <button onclick="selectDriver('${d.id}', '${d.name}')" class="w-full text-left p-2 bg-gray-700 hover:bg-red-600 rounded transition-colors">
+                    ${d.name}
+                </button>
+            `).join('');
+        }
+
+        function selectDriver(id, name) {
+            const solutionKey = `${currentCell.r}_${currentCell.c}`; // for lookup in gameState
+            const domKey = `cell-${currentCell.r}-${currentCell.c}`;        
+            if (gameState.solutions[solutionKey].includes(id)) {
+                const cell = document.getElementById(domKey);
+
+                // add the helmet image for current player instead of text
+                const img = document.createElement('img');
+                img.src = `img/Casque_${currentPlayer}-removebg-preview.png`;
+                img.alt = currentPlayer;
+                img.title = name; // use driver name as tooltip
+                img.className = 'h-full w-full object-contain';
+
+                cell.innerHTML = '';
+                // wrapper to stack helmet and name vertically
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col items-center h-full w-full';
+                wrapper.appendChild(img);
+                const label = document.createElement('div');
+                label.textContent = name;
+                label.className = 'text-xs mt-1 text-center';
+                wrapper.appendChild(label);
+                cell.appendChild(wrapper);
+
+                cell.classList.remove('bg-gray-700');
+                cell.classList.add('bg-green-600');
+                cell.disabled = true;
+                cell.classList.remove('p-1'); // remove padding so image fills cell
+
+                // toggle players X/O
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+
+                closeModal();
+            } else {
+                alert("Mauvaise réponse !");
+            }
+        }
+
+        initGame();
+    </script>
+
+<svg width="500" height="500" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+    <path style="fill: none; stroke: #000; stroke-width: 20; stroke-linejoin: round; stroke-dasharray: none; stroke-opacity: 1;" d="M135.775 93.019c-.061-5.185 5.944-5.518 9.211-5.518 1.16 0 6.021.23 14.424 0 7.211-.197 14.824-7.881 14.223-14.384-.709-7.662-.976-15.566-1.202-21.674-.401-10.838 9.215-24.04 19.03-29.36 9.424-5.107 11.84-6.065 19.232-9.458 12.019-5.517 25.641 7.094 25.44 21.872-.144 10.64.201 22.069 0 30.148-.176 7.1-2.264 13.515-8.213 17.93-11.418 8.473-18.125 13.541-37.26 27.192-7.841 5.595-9.615 14.975-5.81 21.675 6.342 11.16 19.373 14.762 28.847 9.26 5.888-3.418 6.704-4.003 11.82-7.487 18.229-12.413 25.378 13.651 25.44 22.463.2 27.98 1.002 142.068 1.403 160.984.277 13.102 3.112 20.651 17.228 18.916 9.615-1.183 13.221-1.577 20.032-2.365 7.962-.92 12.044 11.224 3.606 14.187-1.402.494-3.46 1.116-5.91 1.873-6.712 2.07-7.045 6.751-6.512 9.557 1.202 6.306 5.91 7.488 13.222 7.094 12.008-.647 36.058-2.168 44.07-2.759 8.84-.652 17.43-.82 20.835 5.32 4.807 8.67 5.581 16.747 5.208 21.28-2.003 24.237-6.878 48.407-10.818 60.099-.8 2.374-7.612 33.891-42.468 36.125-30.707 1.967-66.508 2.826-90.013 2.626-30.717-.262-80.397-26.535-80.93-88.8-.332-38.913-3.377-242.496-4.135-306.796z" />
+</svg>
+
+</body>
+</html>
+
