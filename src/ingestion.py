@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import fastf1
 import os
+from unidecode import unidecode
 
 fastf1.Cache.enable_cache('data\\cache') 
 
@@ -38,8 +39,18 @@ def save_circuit_map(year: int, gp_name: str, output_folder: str = "img/circuits
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+
+    track_name = {
+        'cpa' : 'spa-francorchamps',
+        'monte carlo' : 'monaco',
+        'miami gardens' : 'miami',
+        'yas island' : 'yas_marina'
+    }
+
+    gp_name = track_name.get(gp_name.lower(), gp_name)
+
         
-    file_path = f"{output_folder}/{gp_name.lower().replace(' ', '_')}.png"
+    file_path = f"{output_folder}/{unidecode(gp_name.lower().replace(' ', '_'))}.png"
     
     if os.path.exists(file_path):
         return file_path
@@ -110,11 +121,16 @@ def ingest_f1_data(start_year, end_year):
             gp_list = schedule[schedule['EventFormat'] != 'testing']
 
             for _, event in gp_list.iterrows():
-                gp_name = event['EventName']
-                print(f"Extraction : {gp_name}...")
+                # gp_name = event['EventName']
+                circuit_name = event['Location'] # Ou event['CircuitName'] pour le nom complet
+                print(f"Extraction : {circuit_name}...")
                 
-                race = fastf1.get_session(year, gp_name, 'R')
+                race = fastf1.get_session(year, circuit_name, 'R')
                 race.load(laps=False, telemetry=False, weather=False, messages=False)
+                
+                # Get circuit name
+                # circuit_info = race.get_circuit_info()
+                # circuit_name = circuit_info.name
                 
                 results = race.results
 
@@ -124,7 +140,7 @@ def ingest_f1_data(start_year, end_year):
                     team_id = row['TeamName'].replace(" ", "_").lower()
                     team_name = row['TeamName']
                     position = row['Position']
-                    track_url = save_circuit_map(year, gp_name)
+                    track_url = save_circuit_map(year, circuit_name)
 
                     # 1. Les écuries
                     team = session.query(Team).filter(Team.id == team_id).first()
@@ -160,13 +176,13 @@ def ingest_f1_data(start_year, end_year):
                         driver.has_won_race = True
                         win_exists = session.query(Win).filter_by(
                             driver_id=driver_id, 
-                            circuit_name=gp_name, 
+                            circuit_name=circuit_name, 
                             track_url=track_url,
                             year=year
                         ).first()
                         
                         if not win_exists:
-                            new_win = Win(driver_id=driver_id, circuit_name=gp_name, year=year, track_url=track_url)
+                            new_win = Win(driver_id=driver_id, circuit_name=circuit_name, year=year, track_url=track_url)
                             session.add(new_win)
 
             session.commit()
@@ -182,6 +198,6 @@ if __name__ == "__main__":
     init_db()
 
     print("Début de l'ingestion...")
-    ingest_f1_data(2000, 2005)
+    ingest_f1_data(2018, 2025)
     apply_champions()
     print("Ingestion terminée !")
