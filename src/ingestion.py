@@ -1,10 +1,9 @@
 import os
 import fastf1
+from fastf1.ergast import Ergast 
 from database import SessionLocal, Driver, Team, Win, init_db
 import matplotlib.pyplot as plt
 import numpy as np
-import fastf1
-import os
 from unidecode import unidecode
 
 fastf1.Cache.enable_cache('data\\cache') 
@@ -112,14 +111,16 @@ def apply_champions():
 
 def ingest_f1_data(start_year, end_year):
     session = SessionLocal()
+    ergast = Ergast()
     
     for year in range(start_year, end_year + 1):
         print(f"--- Traitement de la saison {year} ---")
-        
+        drivers_info = ergast.get_driver_info(season=year)
+        nat_map = {f"{d['givenName']} {d['familyName']}": d['driverNationality'] for _, d in drivers_info.iterrows()}
         try:
             schedule = fastf1.get_event_schedule(year)
             gp_list = schedule[schedule['EventFormat'] != 'testing']
-
+            ok = True
             for _, event in gp_list.iterrows():
                 # gp_name = event['EventName']
                 circuit_name = event['Location'] # Ou event['CircuitName'] pour le nom complet
@@ -137,6 +138,7 @@ def ingest_f1_data(start_year, end_year):
                 for _, row in results.iterrows():
                     driver_id = row['DriverId'].lower()
                     driver_name = row['FullName']
+                    nationality = nat_map.get(driver_name, "Unknown")
                     team_id = row['TeamName'].replace(" ", "_").lower()
                     team_name = row['TeamName']
                     position = row['Position']
@@ -157,6 +159,7 @@ def ingest_f1_data(start_year, end_year):
                         driver = Driver(
                             id=driver_id, 
                             name=driver_name,
+                            country=nationality,
                             first_year=year,
                             last_year=year,
                             has_won_race=False

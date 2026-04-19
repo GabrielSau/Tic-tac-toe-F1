@@ -14,6 +14,7 @@ class Driver(Base):
     __tablename__ = 'drivers'
     id = Column(String, primary_key=True)
     name = Column(String)
+    country = Column(String)
     is_world_champion = Column(Boolean, default=False)
     has_won_race = Column(Boolean, default=False)
     first_year = Column(Integer)
@@ -71,6 +72,10 @@ def check_driver_compatibility(driver_id: str, category_type: str, category_valu
         if category_type == 'team':
             # category_value est le nom ou l'ID de l'écurie
             return any(t.id == category_value or t.name == category_value for t in driver.teams)
+        
+        elif category_type == 'country':
+            # category_value sera le nom du pays (ex: 'France' ou 'Germany')
+            return driver.country == category_value
         
         elif category_type == 'win':
             # category_value est le nom du circuit (ex: 'Monaco')

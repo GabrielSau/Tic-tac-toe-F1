@@ -8,7 +8,8 @@ CATEGORIES = [
     {"type": "win", "label": "A gagné à {name}"},
     {"type": "champion", "label": "Champion du Monde"},
     {"type": "decade", "label": "Actif dans les années {name}"},
-    {"type": "one_race_winner", "label": "Vainqueur de GP"}
+    {"type": "one_race_winner", "label": "Vainqueur de GP"},
+    {"type": "country", "label": "Nationalité : {name}"}
 ]
 
 def get_valid_drivers_for_cell(crit_row, crit_col):
@@ -22,6 +23,8 @@ def get_valid_drivers_for_cell(crit_row, crit_col):
     for crit in [crit_row, crit_col]:
         if crit['type'] == 'team':
             query = query.join(Driver.teams).filter(Team.id == crit['value'])
+        elif crit['type'] == 'country':
+            query = query.filter(Driver.country == crit['value'])
         elif crit['type'] == 'win':
             query = query.join(Driver.wins).filter(Win.circuit_name == crit['value'])
         elif crit['type'] == 'champion':
