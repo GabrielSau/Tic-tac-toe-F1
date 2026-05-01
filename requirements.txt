@@ -1,6 +1,8 @@
 fastapi
 uvicorn
 SQLAlchemy
+sqlalchemy
+sqlalchemy-utils
 fastf1
 matplotlib
 numpy
