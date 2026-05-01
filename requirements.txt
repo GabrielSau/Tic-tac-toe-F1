@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+fastf1
+matplotlib
+numpy
+unidecode
+requests
+kivy
