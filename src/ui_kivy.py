@@ -512,7 +512,8 @@ class TicTacToeF1App(App):
                 data = r.json()
                 Clock.schedule_once(lambda dt: self._on_game_created(data))
             except Exception as e:
-                Clock.schedule_once(lambda dt: self._set_error(f"Connexion échouée: {e}"))
+                msg = str(e)
+                Clock.schedule_once(lambda dt: self._set_error(f"Connexion échouée: {msg}"))
 
         threading.Thread(target=_do, daemon=True).start()
 
