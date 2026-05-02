@@ -570,7 +570,6 @@ class TicTacToeF1App(App):
                         hint_text_color=(C_GREY[0], C_GREY[1], C_GREY[2], 0.6),
                         cursor_color=C_GOLD, size_hint_y=None, height=dp(56),
                         halign='center')
-        _bg(inp, C_SURFACE2, radius=dp(10))
         content.add_widget(inp)
 
         btn_join = StyledButton(text="REJOINDRE", size_hint_y=None, height=dp(52),
