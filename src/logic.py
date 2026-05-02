@@ -56,6 +56,7 @@ def generate_grid():
     # on gardera aussi le nom pour le label
     all_teams = [(t.id, t.name) for t in session.query(Team.id, Team.name).all()]
     all_circuits = [w[0] for w in session.query(Win.circuit_name).distinct().all()]
+    all_countries = [r[0] for r in session.query(Driver.country).distinct().all()]
     session.close()
 
     # construire un pool de critères distincts
@@ -63,6 +64,9 @@ def generate_grid():
     # équipes
     for tid, tname in all_teams:
         pool.append({'type': 'team', 'value': tid, 'label': CATEGORIES[0]['label'].format(name=tname)})
+    # Nationalité du pilote
+    for country in all_countries:
+        pool.append({'type': 'country', 'value': country, 'label': CATEGORIES[5]['label'].format(name=country)})
     # victoires sur circuits
     for circ in all_circuits:
         pool.append({'type': 'win', 'value': circ, 'label': CATEGORIES[1]['label'].format(name=circ)})
