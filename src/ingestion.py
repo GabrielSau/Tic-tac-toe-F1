@@ -40,7 +40,7 @@ def save_circuit_map(year: int, gp_name: str, output_folder: str = "img/circuits
         os.makedirs(output_folder)
 
     track_name = {
-        'cpa' : 'spa-francorchamps',
+        'spa' : 'spa-francorchamps',
         'monte carlo' : 'monaco',
         'miami gardens' : 'miami',
         'yas island' : 'yas_marina'
@@ -53,6 +53,8 @@ def save_circuit_map(year: int, gp_name: str, output_folder: str = "img/circuits
     
     if os.path.exists(file_path):
         return file_path
+    elif year <= 2018:
+        return None
 
     try:
         session = fastf1.get_session(year, gp_name, 'Q')
@@ -201,6 +203,6 @@ if __name__ == "__main__":
     init_db()
 
     print("Début de l'ingestion...")
-    ingest_f1_data(2018, 2025)
+    ingest_f1_data(2023, 2025)
     apply_champions()
     print("Ingestion terminée !")
