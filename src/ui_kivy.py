@@ -425,111 +425,7 @@ def _get_flag_path(country_name: str) -> str | None:
     _FLAG_CACHE[country_name] = None
     return None
 
-# ─── Cache logos écuries (téléchargés une seule fois par session) ─────────────
-_TEAM_LOGO_CACHE = {}  # team_name -> chemin fichier local ou None
 
-def _get_team_logo_path(team_name: str) -> str | None:
-    """Retourne le chemin local du logo Wikipedia de l'écurie (télécharge si besoin)."""
-    if team_name in _TEAM_LOGO_CACHE:
-        return _TEAM_LOGO_CACHE[team_name]
-
-    logo_dir = os.path.join(_BASE_DIR, '..', 'img', 'team_logos')
-    os.makedirs(logo_dir, exist_ok=True)
-
-    # Nom de fichier safe (remplace les caractères spéciaux)
-    safe_name = "".join(c if c.isalnum() or c in (' ', '-') else '_' for c in team_name)
-    file_path = os.path.normpath(os.path.join(logo_dir, f"{safe_name}.png"))
-
-    if os.path.exists(file_path):
-        _TEAM_LOGO_CACHE[team_name] = file_path
-        return file_path
-
-    try:
-        # Étape 1 : API Wikipedia pour trouver le titre de page exact
-        search_url = "https://en.wikipedia.org/w/api.php"
-        search_params = {
-            "action": "query",
-            "list": "search",
-            "srsearch": f"{team_name} Formula One team",
-            "srlimit": 1,
-            "format": "json"
-        }
-        search_resp = requests.get(search_url, params=search_params, timeout=5)
-        search_data = search_resp.json()
-        results = search_data.get("query", {}).get("search", [])
-        if not results:
-            raise ValueError(f"Aucun résultat Wikipedia pour '{team_name}'")
-        page_title = results[0]["title"]
-
-        # Étape 2 : Récupère les images de la page
-        images_params = {
-            "action": "query",
-            "titles": page_title,
-            "prop": "images",
-            "imlimit": 20,
-            "format": "json"
-        }
-        images_resp = requests.get(search_url, params=images_params, timeout=5)
-        images_data = images_resp.json()
-        pages = images_data.get("query", {}).get("pages", {})
-        page = next(iter(pages.values()))
-        images = page.get("images", [])
-
-        # Étape 3 : Cherche un fichier logo (svg ou png contenant "logo" dans le nom)
-        logo_filename = None
-        for img_info in images:
-            fname = img_info["title"].lower()
-            if "logo" in fname and (fname.endswith(".png") or fname.endswith(".svg")):
-                logo_filename = img_info["title"]
-                break
-        # Fallback : premier png/svg de la page
-        if not logo_filename:
-            for img_info in images:
-                fname = img_info["title"].lower()
-                if fname.endswith(".png") or fname.endswith(".svg"):
-                    logo_filename = img_info["title"]
-                    break
-
-        if not logo_filename:
-            raise ValueError(f"Aucune image logo trouvée pour '{team_name}'")
-
-        # Étape 4 : Récupère l'URL de téléchargement du fichier
-        file_params = {
-            "action": "query",
-            "titles": logo_filename,
-            "prop": "imageinfo",
-            "iiprop": "url",
-            "iiurlwidth": 200,  # thumbnail 200px (convertit aussi les SVG en PNG)
-            "format": "json"
-        }
-        file_resp = requests.get(search_url, params=file_params, timeout=5)
-        file_data = file_resp.json()
-        file_pages = file_data.get("query", {}).get("pages", {})
-        file_page = next(iter(file_pages.values()))
-        imageinfo = file_page.get("imageinfo", [{}])[0]
-        # thumburl donne un PNG même pour les SVG
-        img_url = imageinfo.get("thumburl") or imageinfo.get("url")
-
-        if not img_url:
-            raise ValueError(f"URL introuvable pour '{logo_filename}'")
-
-        # Étape 5 : Télécharge l'image
-        img_resp = requests.get(img_url, timeout=5,
-                                headers={"User-Agent": "TicTacToeF1/1.0"})
-        if img_resp.status_code == 200:
-            with open(file_path, 'wb') as f:
-                f.write(img_resp.content)
-            _TEAM_LOGO_CACHE[team_name] = file_path
-            print(f"Logo téléchargé : {team_name} → {file_path}")
-            return file_path
-        else:
-            raise ValueError(f"HTTP {img_resp.status_code} pour {img_url}")
-
-    except Exception as e:
-        print(f"Team logo download failed for '{team_name}': {e}")
-
-    _TEAM_LOGO_CACHE[team_name] = None
-    return None
 
 def _make_axis_visual(crit: dict) -> BoxLayout:
     """
@@ -576,26 +472,6 @@ def _make_axis_visual(crit: dict) -> BoxLayout:
                 container.add_widget(inner)
                 return container
 
-    elif crit_type == 'team' and crit_value:
-        team_name = label_text.replace("A roulé pour ", "").strip()
-        logo_path = _get_team_logo_path(team_name)
-        if logo_path:
-            inner = FloatLayout()
-            img = Image(source=logo_path, size_hint=(0.85, 0.72),
-                        pos_hint={'center_x': 0.5, 'center_y': 0.6},
-                        allow_stretch=True, keep_ratio=True, mipmap=True)
-            inner.add_widget(img)
-            name_lbl = Label(
-                text=team_name, font_size=sp(7), color=C_GREY_LIGHT,
-                size_hint=(1, None), height=dp(12),
-                pos_hint={'center_x': 0.5, 'y': 0},
-                halign='center', valign='middle'
-            )
-            name_lbl.bind(size=name_lbl.setter('text_size'))
-            inner.add_widget(name_lbl)
-            container.add_widget(inner)
-            return container
-        
     elif crit_type == 'champion':
         trophy_path = os.path.normpath(os.path.join(
             _BASE_DIR, '..', 'img', 'world_cup_champion-removebg-preview.png'))

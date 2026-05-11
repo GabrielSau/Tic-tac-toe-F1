@@ -203,6 +203,6 @@ if __name__ == "__main__":
     init_db()
 
     print("Début de l'ingestion...")
-    ingest_f1_data(2023, 2025)
+    ingest_f1_data(1950, 2025)
     apply_champions()
     print("Ingestion terminée !")
