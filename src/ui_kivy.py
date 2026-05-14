@@ -596,7 +596,7 @@ class TicTacToeF1App(App):
         if self.error_message:
             err_card = BoxLayout(size_hint_y=None, height=dp(48), padding=[dp(16), dp(8)])
             _bg(err_card, (0.55, 0.07, 0.10, 0.85), radius=dp(8))
-            err_card.add_widget(Label(text=f"⚠  {self.error_message[:60]}",
+            err_card.add_widget(Label(text=f"{self.error_message[:60]}",
                                       font_size=sp(13), color=C_WHITE))
             root.add_widget(err_card)
 
@@ -622,6 +622,13 @@ class TicTacToeF1App(App):
         btn_join.bind(on_press=lambda x: self.show_join_popup())
         root.add_widget(btn_join)
 
+        # ── Bouton comment jouer ──────────────────────────────────────────────
+        btn_help = StyledButton(text="COMMENT JOUER", size_hint_y=None,
+                                height=dp(52), bg=C_SURFACE2, text_color=C_GREY_LIGHT,
+                                font_size=sp(15))
+        btn_help.bind(on_press=lambda x: self.show_how_to_play())
+        root.add_widget(btn_help)
+
         btn_quit = StyledButton(text="QUITTER", size_hint_y=None, height=dp(52),
                                 bg=C_SURFACE2, text_color=C_GREY_LIGHT, font_size=sp(15))
         btn_quit.bind(on_press=lambda x: self.stop())
@@ -634,6 +641,202 @@ class TicTacToeF1App(App):
                               size_hint_y=None, height=dp(24)))
 
         self.main_widget.add_widget(root)
+
+    # ── COMMENT JOUER ─────────────────────────────────────────────────────────
+
+    def show_how_to_play(self):
+        """Affiche un popup avec les règles du jeu et les catégories."""
+
+        # ── Contenu scrollable ────────────────────────────────────────────────
+        outer = BoxLayout(orientation='vertical', spacing=0)
+        _bg(outer, C_SURFACE)
+
+        # Titre
+        title_bar = BoxLayout(size_hint_y=None, height=dp(58),
+                              padding=[dp(20), dp(10)])
+        _bg(title_bar, C_RED)
+        title_bar.add_widget(Label(
+            text="COMMENT JOUER", font_size=sp(18), bold=True, color=C_WHITE,
+            halign='left', valign='middle'))
+        outer.add_widget(title_bar)
+
+        # Zone scrollable
+        scroll = ScrollView(size_hint_y=1, do_scroll_x=False)
+        content = BoxLayout(orientation='vertical', padding=[dp(18), dp(16)],
+                            spacing=dp(14), size_hint_y=None)
+        content.bind(minimum_height=content.setter('height'))
+
+        def _section_title(text, color=C_GOLD):
+            lbl = Label(
+                text=text, font_size=sp(14), bold=True, color=color,
+                size_hint_y=None, height=dp(28),
+                halign='left', valign='middle')
+            lbl.bind(size=lbl.setter('text_size'))
+            return lbl
+
+        def _section_text(text, height=dp(90)):
+            lbl = Label(
+                text=text, font_size=sp(13), color=C_GREY_LIGHT,
+                size_hint_y=None, height=height,
+                halign='left', valign='top',
+                markup=True)
+            lbl.bind(size=lbl.setter('text_size'))
+            return lbl
+
+        def _rule_card(icon, title, desc, accent=C_RED):
+            card = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(70),
+                             padding=[dp(12), dp(10)], spacing=dp(12))
+            _bg(card, C_SURFACE2, radius=dp(10))
+            _border(card, (accent[0]*0.4, accent[1]*0.4, accent[2]*0.4, 1), radius=dp(10))
+
+            icon_box = BoxLayout(size_hint_x=None, width=dp(44))
+            _bg(icon_box, (accent[0]*0.18, accent[1]*0.18, accent[2]*0.18, 1), radius=dp(8))
+            icon_box.add_widget(Label(text=icon, font_size=sp(22)))
+
+            text_box = BoxLayout(orientation='vertical', spacing=dp(2))
+            t = Label(text=title, font_size=sp(13), bold=True, color=C_WHITE,
+                      halign='left', valign='middle', size_hint_y=0.45)
+            t.bind(size=t.setter('text_size'))
+            d = Label(text=desc, font_size=sp(11), color=C_GREY_LIGHT,
+                      halign='left', valign='top', size_hint_y=0.55, markup=True)
+            d.bind(size=d.setter('text_size'))
+            text_box.add_widget(t)
+            text_box.add_widget(d)
+
+            card.add_widget(icon_box)
+            card.add_widget(text_box)
+            return card
+
+        def _cat_card(icon, name, desc, color=C_GREY_LIGHT):
+            # Hauteur fixe pour eviter les boucles de layout Kivy
+            card = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(88),
+                             padding=[dp(12), dp(10)], spacing=dp(4))
+            _bg(card, C_SURFACE2, radius=dp(10))
+            _border(card, C_BORDER, radius=dp(10))
+
+            header = BoxLayout(size_hint_y=None, height=dp(26), spacing=dp(8))
+            header.add_widget(Label(text=icon, font_size=sp(15),
+                                    size_hint_x=None, width=dp(22)))
+            t = Label(text=name, font_size=sp(13), bold=True, color=color,
+                      halign='left', valign='middle')
+            t.bind(size=t.setter('text_size'))
+            header.add_widget(t)
+            card.add_widget(header)
+
+            d = Label(text=desc, font_size=sp(11), color=C_GREY_LIGHT,
+                      halign='left', valign='top', markup=True, size_hint_y=1)
+            d.bind(size=d.setter('text_size'))
+            card.add_widget(d)
+            return card
+
+        # ══ SECTION 1 : Le principe ══════════════════════════════════════════
+        content.add_widget(_section_title("LE PRINCIPE"))
+        content.add_widget(_section_text(
+            "C'est un Tic-Tac-Toe sur le thème de la Formule 1.\n"
+            "La grille 3×3 possède des [b]critères en ligne[/b] (rangées) "
+            "et [b]en colonne[/b] (colonnes). Pour jouer dans une case, "
+            "tu dois trouver un pilote F1 qui satisfait [b]à la fois[/b] "
+            "le critère de sa ligne ET de sa colonne.\n"
+            "Ex : si la ligne est « Ferrari » et la colonne est « Champion du monde », "
+            "il faut nommer un pilote qui a couru en Ferrari [b]et[/b] a été champion du monde.",
+            height=dp(120)
+        ))
+        content.add_widget(Divider())
+
+        # ══ SECTION 2 : Les règles ═══════════════════════════════════════════
+        content.add_widget(_section_title("LES RÈGLES"))
+
+        content.add_widget(_rule_card("1", "Tour par tour",
+            "Le Joueur O commence (casque rouge). Les joueurs alternent.", C_PLAYER_O))
+        content.add_widget(_rule_card("2", "Saisir un pilote",
+            "Tape le nom du pilote dans la barre de recherche, puis sélectionne-le.", C_GOLD))
+        content.add_widget(_rule_card("3", "Mauvaise réponse",
+            "Si le pilote ne correspond pas aux deux critères, tu perds ton tour !", C_RED))
+        content.add_widget(_rule_card("4", "Victoire",
+            "Aligne 3 cases en ligne, colonne ou diagonale pour gagner.", C_SUCCESS))
+        content.add_widget(_rule_card("5", "Match nul",
+            "Si les 9 cases sont remplies sans vainqueur, c'est un match nul.", C_GREY_LIGHT))
+        content.add_widget(_rule_card("6", "Rejouer",
+            "Les scores sont conservés entre les manches. Lance une nouvelle course !", C_PLAYER_X))
+
+        content.add_widget(Divider())
+
+        # ══ SECTION 3 : Modes de jeu ═════════════════════════════════════════
+        content.add_widget(_section_title("MODES DE JEU"))
+        content.add_widget(_rule_card("7", "Partie locale",
+            "Deux joueurs sur le même appareil, en passant le téléphone.", C_PLAYER_O))
+        content.add_widget(_rule_card("8", "Créer une partie en ligne",
+            "Génère un code de partie et envoie-le à ton adversaire. Joue en temps réel !", C_GOLD))
+        content.add_widget(_rule_card("9", "Rejoindre une partie",
+            "Entre le code reçu pour rejoindre la session de ton adversaire.", C_PLAYER_X))
+
+        content.add_widget(Divider())
+
+        # ══ SECTION 4 : Les catégories ═══════════════════════════════════════
+        content.add_widget(_section_title("LES CATÉGORIES DE CRITÈRES"))
+        content.add_widget(_section_text(
+            "Chaque axe de la grille utilise un critère parmi les catégories suivantes :",
+            height=dp(28)
+        ))
+
+        content.add_widget(_cat_card(
+            "", "Circuit / Grand Prix",
+            "Le pilote doit avoir [b]remporté une victoire[/b] sur ce circuit au moins une fois "
+            "dans sa carrière en F1.",
+            C_WHITE
+        ))
+        content.add_widget(_cat_card(
+            "", "Champion du monde",
+            "Le pilote doit avoir été [b]sacré Champion du Monde de F1[/b] au moins une fois.",
+            C_GOLD
+        ))
+        content.add_widget(_cat_card(
+            "", "Nationalité / Pays",
+            "Le pilote doit être [b]originaire du pays[/b] indiqué (ex : Français, Britannique…).",
+            C_PLAYER_X
+        ))
+        content.add_widget(_cat_card(
+            "", "Écurie",
+            "Le pilote doit avoir [b]couru au moins une saison[/b] pour cette écurie "
+            "(ex : Ferrari, Mercedes, Red Bull…).",
+            C_PLAYER_O
+        ))
+
+        content.add_widget(Divider())
+
+        # ══ SECTION 5 : Astuce ═══════════════════════════════════════════════
+        content.add_widget(_section_title("ASTUCES", color=C_SUCCESS))
+        content.add_widget(_section_text(
+            "[b]• Cherche par prénom ou nom[/b] — la barre de recherche filtre en temps réel.\n"
+            "[b]• Les pilotes historiques comptent ![/b] — Senna, Prost, Schumacher… tous les pilotes "
+            "de l'histoire de la F1 sont dans la base de données.\n"
+            "[b]• Un pilote ne peut pas être joué deux fois[/b] dans la même partie, même s'il "
+            "correspond à plusieurs cases.\n"
+            "[b]• En cas de doute[/b], pense aux pilotes qui ont changé d'écurie souvent — "
+            "ils peuvent correspondre à beaucoup de cases !",
+            height=dp(130)
+        ))
+
+        content.add_widget(Widget(size_hint_y=None, height=dp(10)))
+
+        scroll.add_widget(content)
+        outer.add_widget(scroll)
+
+        # Bouton fermer
+        close_btn = StyledButton(text="COMPRIS, ON JOUE !",
+                                 bg=C_RED, font_size=sp(15),
+                                 size_hint_y=None, height=dp(54))
+
+        popup = Popup(
+            title='', title_size=0,
+            content=outer,
+            size_hint=(0.95, 0.88),
+            background='', background_color=(0, 0, 0, 0),
+            separator_height=0
+        )
+        close_btn.bind(on_press=popup.dismiss)
+        outer.add_widget(close_btn)
+        popup.open()
 
     # ── MULTIJOUEUR : CRÉER ───────────────────────────────────────────────────
 
@@ -856,7 +1059,7 @@ class TicTacToeF1App(App):
         if self.online_mode:
             is_my_turn = (self.current_player == self.my_player)
             turn_color = C_GOLD if is_my_turn else C_GREY
-            turn_text = f"▶  TON TOUR (Joueur {self.my_player})" if is_my_turn else "⏳  En attente de l'adversaire..."
+            turn_text = f"TON TOUR (Joueur {self.my_player})" if is_my_turn else "En attente de l'adversaire..."
             turn_banner = BoxLayout(size_hint_y=None, height=dp(36), padding=[dp(16), dp(6)])
             _bg(turn_banner,
                 (C_GOLD[0]*0.12, C_GOLD[1]*0.12, C_GOLD[2]*0.12, 1) if is_my_turn else C_SURFACE)
@@ -1157,7 +1360,7 @@ class TicTacToeF1App(App):
                                              keep_ratio=True, mipmap=True))
                 helmet_area.add_widget(Widget(size_hint_x=0.2))
             else:
-                helmet_area.add_widget(Label(text="🏆", font_size=sp(80)))
+                helmet_area.add_widget(Label(text="", font_size=sp(80)))
         root.add_widget(helmet_area)
 
         result_card = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(140),
@@ -1169,7 +1372,7 @@ class TicTacToeF1App(App):
         else:
             accent_color = C_PLAYER_O if winner == "O" else C_PLAYER_X
             main_text = f"JOUEUR {winner} GAGNE !"
-            sub_text = "Victoire au Grand Prix — Podium P1 🏅"
+            sub_text = "Victoire au Grand Prix — Podium P1"
 
         _bg(result_card, (accent_color[0]*0.12, accent_color[1]*0.12, accent_color[2]*0.12, 1), radius=dp(18))
         _glow_border(result_card, accent_color, width=dp(2.5), radius=dp(18))
